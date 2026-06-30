@@ -32,7 +32,7 @@ public class PasskeyHandler(
         var passkeyDescriptor = adService.GetPasskeyFromCredentialId(assertionResponse.RawId);
         if (passkeyDescriptor == null)
         {
-            _logger.LogDebug("An logon attempt failed, due to an unkown passkey {passkeyId}", assertionResponse.Id);
+            _logger.LogWarning("An logon attempt failed, due to an unkown passkey {passkeyId}", assertionResponse.Id);
             return (null, Results.Unauthorized());
         }
 
