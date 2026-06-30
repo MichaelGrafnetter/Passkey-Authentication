@@ -153,6 +153,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseSession();
 
+app.UseForwardedHeaders();
 app.UseRequestLocalization();
 app.UseRouting();
 
