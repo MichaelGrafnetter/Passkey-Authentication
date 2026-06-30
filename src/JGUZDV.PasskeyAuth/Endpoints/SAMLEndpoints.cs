@@ -19,7 +19,7 @@ public static class SAMLEndpoints
     {
         var saml = endpoints.MapGroup("saml2/idp");
 
-        saml.MapGet("/metadata", GetMetadata);
+        saml.MapGet("/metadata", GetIDPMetadata);
         saml.MapGet("/login", PerformSAMlLogin)
             .WithName(nameof(PerformSAMlLogin))
             .RequireAuthorization();
@@ -28,7 +28,7 @@ public static class SAMLEndpoints
     }
 
 
-    internal static IResult GetMetadata(
+    internal static IResult GetIDPMetadata(
         HttpContext context,
         LinkGenerator linkGenerator,
         Saml2Configuration samlConfig,
@@ -125,8 +125,8 @@ public static class SAMLEndpoints
             throw new BadHttpRequestException("SAML2:InvalidEntityId");
         }
 
-        var rpConfig = GetRpSaml2Configuration(relyingParty, samlConfig);
-        var saml2AuthnRequest = new Saml2AuthnRequest(rpConfig);
+        var serviceProviderConfiguration = GetServiceProviderSamlConfiguration(relyingParty, samlConfig);
+        var saml2AuthnRequest = new Saml2AuthnRequest(serviceProviderConfiguration);
 
         var responseBinding = new Saml2PostBinding
         {
@@ -140,7 +140,7 @@ public static class SAMLEndpoints
             httpRequest.Binding.Unbind(httpRequest, saml2AuthnRequest);
 
             var claims = context.User.Claims;
-            saml2AuthnResponse = new Saml2AuthnResponse(rpConfig)
+            saml2AuthnResponse = new Saml2AuthnResponse(serviceProviderConfiguration)
             {
                 InResponseTo = saml2AuthnRequest.Id,
                 Status = Saml2StatusCodes.Success,
@@ -163,7 +163,7 @@ public static class SAMLEndpoints
         catch (Exception exc)
         {
             Debug.WriteLine($"Saml 2.0 Authn Request error: {exc.ToString()}\nSaml Auth Request: '{saml2AuthnRequest.XmlDocument?.OuterXml}'\nQuery String: {context.Request.QueryString}");
-            saml2AuthnResponse = new Saml2AuthnResponse(rpConfig)
+            saml2AuthnResponse = new Saml2AuthnResponse(serviceProviderConfiguration)
             {
                 InResponseTo = saml2AuthnRequest.Id,
                 Status = Saml2StatusCodes.Responder,
@@ -176,7 +176,7 @@ public static class SAMLEndpoints
     }
 
 
-    private static Saml2Configuration GetRpSaml2Configuration(EntityDescriptor relyingParty, Saml2Configuration samlConfig)
+    private static Saml2Configuration GetServiceProviderSamlConfiguration(EntityDescriptor relyingParty, Saml2Configuration samlConfig)
     {
         var rpConfig = new Saml2Configuration()
         {
